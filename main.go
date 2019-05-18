@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cghdev/gotunl"
 	"github.com/olekukonko/tablewriter"
@@ -20,11 +21,14 @@ var color = map[string]string{
 	"green": "\x1b[32;1m",
 	"reset": "\x1b[0m"}
 
-type connections [][]string
-
-func (c connections) Len() int           { return len(c) }
-func (c connections) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
-func (c connections) Less(i, j int) bool { return c[i][0] < c[j][0] }
+type connections struct {
+	id         string
+	name       string
+	status     string
+	timestamp  int64
+	clientAddr string
+	serverAddr string
+}
 
 func listConnections(gt *gotunl.Gotunl) { // add output format as json?
 	if len(gt.Profiles) == 0 {
@@ -32,10 +36,12 @@ func listConnections(gt *gotunl.Gotunl) { // add output format as json?
 		os.Exit(1)
 	}
 	cons := gt.GetConnections()
-	c := connections{}
+	c := []connections{}
 	stdis := ""
 	stcon := ""
+	anycon := false
 	for pid, p := range gt.Profiles {
+		ptmp := connections{}
 		if runtime.GOOS != "windows" {
 			stdis = color["red"] + "Disconnected" + color["reset"]
 			stcon = color["green"] + "Connected" + color["reset"]
@@ -43,22 +49,42 @@ func listConnections(gt *gotunl.Gotunl) { // add output format as json?
 			stdis = "Disconnected"
 			stcon = "Connected"
 		}
-		status := stdis
+		ptmp.status = stdis
+		ptmp.name = gjson.Get(p.Conf, "name").String()
+		ptmp.id = strconv.Itoa(p.ID)
 		if strings.Contains(cons, pid) {
-			status = strings.Title(gjson.Get(cons, pid+".status").String())
-			if status == "Connected" {
-				status = stcon
+			ptmp.status = strings.Title(gjson.Get(cons, pid+".status").String())
+			ptmp.serverAddr = gjson.Get(cons, pid+".server_addr").String()
+			ptmp.clientAddr = gjson.Get(cons, pid+".client_addr").String()
+			ptmp.timestamp = gjson.Get(cons, pid+".timestamp").Int()
+			if ptmp.status == "Connected" {
+				ptmp.status = stcon
+				anycon = true
 			}
 		}
-		ptmp := []string{strconv.Itoa(p.ID), gjson.Get(p.Conf, "name").String(), status}
 		c = append(c, ptmp)
-		sort.Sort(c)
+		sort.Slice(c, func(i, j int) bool {
+			return c[i].id < c[j].id
+		})
 	}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Name", "Status"})
+	if anycon {
+		table.SetHeader([]string{"ID", "Name", "Status", "Connected for", "Client IP", "Server IP"})
+	} else {
+		table.SetHeader([]string{"ID", "Name", "Status"})
+	}
 	table.SetAutoFormatHeaders(false)
 	for _, p := range c {
-		table.Append(p)
+		since := ""
+		if p.timestamp > 0 {
+			ts := time.Unix(p.timestamp, 0)
+			since = formatSince(ts)
+		}
+		if anycon {
+			table.Append([]string{p.id, p.name, p.status, since, p.clientAddr, p.serverAddr})
+		} else {
+			table.Append([]string{p.id, p.name, p.status})
+		}
 	}
 	table.Render()
 }
@@ -82,6 +108,35 @@ func connect(gt *gotunl.Gotunl, id string) {
 			gt.ConnectProfile(pid, "", "")
 		}
 	}
+}
+
+func formatSince(t time.Time) string {
+	Day := 24 * time.Hour
+	ts := time.Since(t)
+	sign := time.Duration(1)
+	var days, hours, minutes, seconds string
+	if ts < 0 {
+		sign = -1
+		ts = -ts
+	}
+	d := sign * (ts / Day)
+	ts = ts % Day
+	h := ts / time.Hour
+	ts = ts % time.Hour
+	m := ts / time.Minute
+	ts = ts % time.Minute
+	s := ts / time.Second
+	if d > 0 {
+		days = fmt.Sprintf("%d days ", d)
+	}
+	if h > 0 {
+		hours = fmt.Sprintf("%d hrs ", h)
+	}
+	if m > 0 {
+		minutes = fmt.Sprintf("%d mins ", m)
+	}
+	seconds = fmt.Sprintf("%d secs", s)
+	return fmt.Sprintf("%v%v%v%v", days, hours, minutes, seconds)
 }
 
 func usage(a *flag.Flag) {
