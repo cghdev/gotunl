@@ -2,8 +2,18 @@
 
 gotunl is a command line client for Pritunl written in Go.
 
+## Installation:
 
-Usage:
+Using go mod, requires go>=1.13:
+
+```
+git clone https://github.com/cghdev/gotunl-vpn.git
+cd gotunl-vpn
+go install
+```
+
+
+##  Usage:
 
 ```bash
 Pritunl command line client
@@ -15,7 +25,9 @@ Usage:
   -v 		        Show version
 ```
 
-Examples:
+
+##Examples:
+
 ```bash
 $ ./gotunl -l
 +----+------------------------+--------------+
