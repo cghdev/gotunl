@@ -12,6 +12,8 @@ cd gotunl-vpn
 go install
 ```
 
+Alternatively, you can download a pre-compiled version from https://github.com/cghdev/gotunl-vpn/releases/latest  
+
 
 ##  Usage:
 
