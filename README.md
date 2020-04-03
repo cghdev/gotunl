@@ -2,6 +2,8 @@
 
 gotunl is a command line client for Pritunl written in Go.
 
+**Note:** gotunl package has been moved to this project under pkg/ directory.
+
 ## Installation:
 
 Using go mod, requires go>=1.13:
