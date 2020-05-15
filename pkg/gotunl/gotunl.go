@@ -197,7 +197,8 @@ func (g Gotunl) ConnectProfile(id string, user string, password string) {
 	data := fmt.Sprintf(`{"id": "%v", "reconnect": true, "timeout": true}`, id)
 	ovpn, auth := g.GetProfile(id)
 	if (auth != "") && (user == "" || password == "") {
-		if auth[len(auth)-3:] == "pin" {
+		auth_method := auth[len(auth)-3:]
+		if auth_method == "otp" || auth_method == "pin" {
 			var otp string
 			user = "pritunl"
 			if password == "" {
