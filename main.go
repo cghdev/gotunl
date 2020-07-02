@@ -22,7 +22,7 @@ var color = map[string]string{
 	"reset": "\x1b[0m"}
 
 type connections struct {
-	id         string
+	id         int
 	name       string
 	status     string
 	timestamp  int64
@@ -51,7 +51,7 @@ func listConnections(gt *gotunl.Gotunl) { // add output format as json?
 		}
 		ptmp.status = stdis
 		ptmp.name = gjson.Get(p.Conf, "name").String()
-		ptmp.id = strconv.Itoa(p.ID)
+		ptmp.id = p.ID
 		if strings.Contains(cons, pid) {
 			ptmp.status = strings.Title(gjson.Get(cons, pid+".status").String())
 			ptmp.serverAddr = gjson.Get(cons, pid+".server_addr").String()
@@ -63,10 +63,10 @@ func listConnections(gt *gotunl.Gotunl) { // add output format as json?
 			}
 		}
 		c = append(c, ptmp)
-		sort.Slice(c, func(i, j int) bool {
-			return c[i].id < c[j].id
-		})
 	}
+	sort.SliceStable(c, func(i, j int) bool {
+		return c[i].id < c[j].id
+	})
 	table := tablewriter.NewWriter(os.Stdout)
 	if anycon {
 		table.SetHeader([]string{"ID", "Name", "Status", "Connected for", "Client IP", "Server IP"})
@@ -80,10 +80,11 @@ func listConnections(gt *gotunl.Gotunl) { // add output format as json?
 			ts := time.Unix(p.timestamp, 0)
 			since = formatSince(ts)
 		}
+		pid := strconv.Itoa(p.id)
 		if anycon {
-			table.Append([]string{p.id, p.name, p.status, since, p.clientAddr, p.serverAddr})
+			table.Append([]string{pid, p.name, p.status, since, p.clientAddr, p.serverAddr})
 		} else {
-			table.Append([]string{p.id, p.name, p.status})
+			table.Append([]string{pid, p.name, p.status})
 		}
 	}
 	table.Render()
