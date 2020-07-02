@@ -26,6 +26,7 @@ Usage:
   -c <profile>	Connect to profile ID or Name
   -d <profile>	Disconnect profile or "all"
   -l 		        List connections
+  -o <output>	Output format table|tsv (default is table)
   -v 		        Show version
 ```
 
