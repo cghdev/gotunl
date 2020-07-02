@@ -30,7 +30,7 @@ type connections struct {
 	serverAddr string
 }
 
-func listConnections(gt *gotunl.Gotunl) { // add output format as json?
+func listConnections(gt *gotunl.Gotunl, output string) { // add output format as json?
 	if len(gt.Profiles) == 0 {
 		fmt.Println("No profiles found in Pritunl")
 		os.Exit(1)
@@ -73,7 +73,7 @@ func listConnections(gt *gotunl.Gotunl) { // add output format as json?
 	} else {
 		table.SetHeader([]string{"ID", "Name", "Status"})
 	}
-	table.SetAutoFormatHeaders(false)
+	setOutputFormat(table, output)
 	for _, p := range c {
 		since := ""
 		if p.timestamp > 0 {
@@ -87,6 +87,29 @@ func listConnections(gt *gotunl.Gotunl) { // add output format as json?
 		}
 	}
 	table.Render()
+}
+
+func setOutputFormat(tbl *tablewriter.Table, output string) *tablewriter.Table {
+	switch output {
+	case "tsv":
+		tbl.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+		tbl.SetAlignment(tablewriter.ALIGN_LEFT)
+		tbl.SetCenterSeparator("")
+		tbl.SetColumnSeparator("\t")
+		tbl.SetRowSeparator("")
+		tbl.SetHeaderLine(false)
+		tbl.SetBorder(false)
+		tbl.SetTablePadding("\t")
+		tbl.SetAutoFormatHeaders(true)
+		tbl.SetAutoWrapText(false)
+		tbl.SetAutoFormatHeaders(false)
+	case "table":
+		tbl.SetAutoFormatHeaders(false)
+	default:
+		fmt.Println("Define output format")
+		os.Exit(1)
+	}
+	return tbl
 }
 
 func disconnect(gt *gotunl.Gotunl, id string) {
@@ -142,6 +165,8 @@ func formatSince(t time.Time) string {
 func usage(a *flag.Flag) {
 	if a.Name == "l" || a.Name == "v" {
 		fmt.Printf("  -%v \t\t%v\n", a.Name, a.Usage)
+	} else if a.Name == "o" {
+		fmt.Printf("  -%v <output>\t%v\n", a.Name, a.Usage)
 	} else {
 		fmt.Printf("  -%v <profile>\t%v\n", a.Name, a.Usage)
 	}
@@ -157,6 +182,7 @@ func main() {
 	l := flag.Bool("l", false, "List connections")
 	c := flag.String("c", "", "Connect to profile ID or Name")
 	d := flag.String("d", "", "Disconnect profile or \"all\"")
+	o := flag.String("o", "table", "Output format table|tsv (default is table)")
 	v := flag.Bool("v", false, "Show version")
 
 	flag.Parse()
@@ -165,7 +191,7 @@ func main() {
 		os.Exit(1)
 	}
 	if *l {
-		listConnections(&gt)
+		listConnections(&gt, *o)
 		os.Exit(0)
 	}
 	if *c != "" {
