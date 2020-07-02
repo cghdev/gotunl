@@ -15,7 +15,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-var version = "1.2.1"
+var version = "1.2.2"
 var color = map[string]string{
 	"red":   "\x1b[31;1m",
 	"green": "\x1b[32;1m",
