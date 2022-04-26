@@ -1,5 +1,5 @@
 TARGET=./build
-ARCHS=amd64
+ARCHS=amd64 arm64
 LDFLAGS="-s -w"
 
 current:
