@@ -43,7 +43,7 @@ func _getKey() string {
 	if _, err := os.Stat(keyPath); !os.IsNotExist(err) {
 		key, err := ioutil.ReadFile(keyPath)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error getting key: %s\n", err)
 		}
 		return string(key)
 	}
@@ -86,7 +86,7 @@ func (g Gotunl) makeReq(verb string, endpoint string, data string) string {
 	url := g.service + endpoint
 	req, err := http.NewRequest(verb, url, bytes.NewBuffer([]byte(data)))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error making request: %s\n", err)
 	}
 	req.Header.Set("User-Agent", "pritunl")
 	req.Header.Set("Content-Type", "application/json")
@@ -105,7 +105,7 @@ func (g Gotunl) makeReq(verb string, endpoint string, data string) string {
 	}
 	res, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error making request (do): %s\n", err)
 	}
 	if res.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(res.Body)
@@ -123,10 +123,7 @@ func (g Gotunl) CheckStatus() string {
 
 func (g Gotunl) Ping() bool {
 	p := g.makeReq("GET", "ping", "")
-	if p == "" {
-		return true
-	}
-	return false
+	return p == ""
 }
 
 func (g Gotunl) GetConnections() string {
@@ -145,7 +142,7 @@ func (g Gotunl) loadProfiles() {
 		prof := strings.Split(filepath.Base(f), ".")[0]
 		conf, err := ioutil.ReadFile(f)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error loading profiles: %s\n", err)
 		}
 		config := string(conf)                        // keep the whole config file to use later, instead of reading the file again.
 		if gjson.Get(config, "name").String() == "" { // If "name": null it will set the name automatically.
@@ -165,7 +162,7 @@ func (g Gotunl) GetProfile(id string) (string, string) {
 	ovpnFile := strings.Replace(prof.Path, id+".conf", id+".ovpn", 1)
 	ovpn, err := ioutil.ReadFile(ovpnFile)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error getting profile: %s\n", err)
 	}
 	for _, l := range strings.Split(string(ovpn), "\n") {
 		if strings.Contains(l, "auth-user-pass") && len(l) <= 17 { //check if it needs credentials and they are not provided as parameter
@@ -180,11 +177,15 @@ func (g Gotunl) GetProfile(id string) (string, string) {
 		command := "security find-generic-password -w -s pritunl -a " + id
 		out, err := exec.Command("bash", "-c", command).Output()
 		if err != nil {
-			log.Fatal(err)
+			if strings.Contains("exit status 36", err.Error()) {
+				log.Println("There was an error accessing the Keychain (probably connected through SSH)")
+				log.Fatal("Run '/usr/bin/security unlock-keychain' to unlock the Keychain and try again")
+			}
+			log.Fatalf("Error getting profiles (find-generic-password): %s\n", err)
 		}
 		res, err := b64.StdEncoding.DecodeString(string(out))
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error decoding base64: %s\n", err)
 		}
 		key = string(res)
 	}
@@ -205,7 +206,7 @@ func (g Gotunl) ConnectProfile(id string, user string, password string) {
 				fmt.Printf("Enter the PIN: ")
 				pass, err := gopass.GetPasswdMasked()
 				if err != nil {
-					log.Fatal(err)
+					log.Fatalf("Error connecting to profile (GetPasswdMasked): %s\n", err)
 				}
 				if auth == "otp_pin" {
 					fmt.Printf("Enter the OTP code: ")
