@@ -28,6 +28,8 @@ darwin:
 		mkdir -p ${TARGET}/gotunl-darwin-$${GOARCH} ; \
 		GOOS=darwin GOARCH=$${GOARCH} go build -trimpath -ldflags=${LDFLAGS} -o ${TARGET}/gotunl-darwin-$${GOARCH}/gotunl ; \
 	done; \
+	mkdir ${TARGET}/gotunl-darwin-universal &>/dev/null; \
+	lipo -create -output ${TARGET}/gotunl-darwin-universal/gotunl ${TARGET}/gotunl-darwin-amd64/gotunl ${TARGET}/gotunl-darwin-arm64/gotunl ; \
 	echo "Done."
 
 all: darwin linux windows
