@@ -206,10 +206,10 @@ func (g Gotunl) ConnectProfile(id string, user string, password string) {
 				fmt.Printf("Enter the PIN: ")
 				pass, err := term.ReadPassword(int(os.Stdin.Fd()))
 				if err != nil {
-					log.Fatalf("Error connecting to profile (ReadPassword): %s\n", err)
+					log.Fatalf("\nError connecting to profile (ReadPassword): %s\n", err)
 				}
 				if auth == "otp_pin" {
-					fmt.Printf("Enter the OTP code: ")
+					fmt.Printf("\nEnter the OTP code: ")
 					fmt.Scanln(&otp)
 				}
 				password = string(pass) + otp
