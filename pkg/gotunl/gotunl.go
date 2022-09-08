@@ -15,9 +15,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/howeyc/gopass"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
+	"golang.org/x/term"
 )
 
 type profile struct {
@@ -204,9 +204,9 @@ func (g Gotunl) ConnectProfile(id string, user string, password string) {
 			user = "pritunl"
 			if password == "" {
 				fmt.Printf("Enter the PIN: ")
-				pass, err := gopass.GetPasswdMasked()
+				pass, err := term.ReadPassword(int(os.Stdin.Fd()))
 				if err != nil {
-					log.Fatalf("Error connecting to profile (GetPasswdMasked): %s\n", err)
+					log.Fatalf("Error connecting to profile (ReadPassword): %s\n", err)
 				}
 				if auth == "otp_pin" {
 					fmt.Printf("Enter the OTP code: ")
@@ -222,7 +222,7 @@ func (g Gotunl) ConnectProfile(id string, user string, password string) {
 		}
 		if password == "" {
 			fmt.Printf("Enter the password: ")
-			pass, _ := gopass.GetPasswdMasked()
+			pass, _ := term.ReadPassword(int(os.Stdin.Fd()))
 			password = string(pass)
 		}
 	}
