@@ -208,7 +208,7 @@ func (g Gotunl) ConnectProfile(id string, user string, password string) {
 				if err != nil {
 					log.Fatalf("\nError connecting to profile (ReadPassword): %s\n", err)
 				}
-				if auth == "otp_pin" || auth == "duo_otp_pin" {
+				if strings.Contains(auth, "otp_pin") {
 					fmt.Printf("\nEnter the OTP code: ")
 					fmt.Scanln(&otp)
 				}
